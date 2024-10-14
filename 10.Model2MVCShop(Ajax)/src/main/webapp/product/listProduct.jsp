@@ -2,52 +2,6 @@
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--
-<%@ page import="java.util.List"  %>
-
-<%@ page import="com.model2.mvc.service.domain.Product" %>
-<%@ page import="com.model2.mvc.common.Search" %>
-<%@ page import="com.model2.mvc.common.Page"%>
-<%@ page import="com.model2.mvc.common.util.CommonUtil"%>
-
-
-
-<%
-	System.out.println("\n:: listProduct.jsp");
-
-	${param.menu}
-	<c:set var="title" value="" />
-	<c:if test= 
-	
-
-	String menu = request.getParameter("menu");
-
-	String title ="";
-
-	if ("search".equals(menu)) {
-   	 	title = "상품 목록";
-	}else if("manage".equals(menu)) {
-		title = "상품 관리";
-	}
-	
-%>
-
-
-
-<%
-	List<Product> list= (List<Product>)request.getAttribute("list"); //
-	Page resultPage=(Page)request.getAttribute("resultPage");
-	Search search = (Search)request.getAttribute("search");
-	//${list}
-	//${resultPage}
-	//${Search}
-	//==> null 을 ""(nullString)으로 변경
-	String searchCondition = CommonUtil.null2str(search.getSearchCondition());
-	String searchKeyword = CommonUtil.null2str(search.getSearchKeyword());
-	
-%>
---%>
-
 <c:set var="type" value="Product" scope="session"/>
 
 <% //System.out.println("\n:: listProduct.jsp"); %>
@@ -73,17 +27,99 @@
 <link rel="stylesheet" href="/css/admin.css" type="text/css">
 
 
-
+<script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
 <script type="text/javascript">
 function fncGetProductList(currentPage){
-	document.getElementById("currentPage").value = currentPage;
-	document.detailForm.submit();
+	//document.getElementById("currentPage").value = currentPage;
+	$("#currentPage").val(currentPage)
+	//document.detailForm.submit();
+	$("form").attr("method" , "POST").attr("action" , "/product/listProduct?menu=${menu}").submit();
 }
+
+$(function() {
+	 
+	 $( "td.ct_btn01:contains('검색')" ).on("click" , function() {
+		fncGetProductList(1);
+	});
+	
+	$( ".ct_list_pop td:nth-child(3)" ).on("click" , function() {
+		var prodNo = $(this).data("prodNo");
+		
+		if("${param.menu}" == 'manage'){
+		$.ajax( 
+				{
+					url : "/product/json/getProduct/"+prodNo ,
+					method : "GET" ,
+					dataType : "json" ,
+					headers : {
+						"Accept" : "application/json",
+						"Content-Type" : "application/json"
+					},
+					success : function(JSONData , status) {
+						
+						var displayValue = "<h3>"
+													+"상 품 번 호 : "+JSONData.prodNo+"<br/>"
+													+"상  품  명 : "+JSONData.prodName+"<br/>"
+													+"상 품 이미지 : 없음 <br/>"
+													+"상품 상세정보 : "+JSONData.prodDetail+"<br/>"
+													+"제 조 일 자 : "+JSONData.manuDate+"<br/>"
+													+"가     격 : "+JSONData.price+"<br/>"
+													+"등 록 일 자 : "+JSONData.regDate+"<br/>"
+													+"</h3>";
+						//Debug...									
+						//alert(displayValue);
+						$("h3").remove();
+						$( "#"+prodNo+"" ).html(displayValue);
+					}
+			});
+		}
+		else if("${param.menu}" == 'search'){
+			$.ajax( 
+					{
+						url : "/product/json/getProduct/"+prodNo ,
+						method : "GET" ,
+						dataType : "json" ,
+						headers : {
+							"Accept" : "application/json",
+							"Content-Type" : "application/json"
+						},
+						success : function(JSONData , status) {
+							
+							var displayValue = "<h3>"
+														+"상 품 번 호 : "+JSONData.prodNo+"<br/>"
+														+"상  품  명 : "+JSONData.prodName+"<br/>"
+														+"상 품 이미지 : 없음 <br/>"
+														+"상품 상세정보 : "+JSONData.prodDetail+"<br/>"
+														+"제 조 일 자 : "+JSONData.manuDate+"<br/>"
+														+"가     격 : "+JSONData.price+"<br/>"
+														+"등 록 일 자 : "+JSONData.regDate+"<br/>"
+														+"</h3>";
+							//Debug...									
+							//alert(displayValue);
+							$("h3").remove();
+							$( "#"+prodNo+"" ).html(displayValue);
+						}
+				});
+		}
+	});
+	
+	$( ".ct_list_pop td:nth-child(3)" ).css("color" , "red");
+	$( ".ct_list_pop td:nth-child(9)" ).css("color" , "red");
+	$("h7").css("color" , "red");
+	
+	$(".ct_list_pop:nth-child(4n+4)" ).css("background-color" , "darkorange");
+	$(".ct_list_pop:nth-child(4n+6)" ).css("background-color" , "skyblue");
+	$(".ct_list_pop:nth-child(4n+8)" ).css("background-color" , "lightgreen");
+
+});	
+	
+	
+	
 </script>
 </head>
 
 <body bgcolor="#ffffff" text="#000000">
-${"listProduct.jsp"}
+
 <div style="width:98%; margin-left:10px;">
 
 <form name="detailForm" action="/product/listProduct?menu=${menu}" method="post">
@@ -134,7 +170,7 @@ ${"listProduct.jsp"}
 						<img src="/images/ct_btnbg01.gif" width="17" height="23">
 					</td>
 					<td background="/images/ct_btnbg02.gif" class="ct_btn01" style="padding-top:3px;">
-						<a href="javascript:fncGetProductList('1');">검색</a>
+						검색
 					</td>
 					<td width="14" height="23">
 						<img src="/images/ct_btnbg03.gif" width="14" height="23">
@@ -172,10 +208,10 @@ ${"listProduct.jsp"}
 			<td align="center">${ i }</td>
 			<td></td>
 			<c:if test = "${param.menu == 'manage'}">
-				<td align="left"><a href="/product/updateProduct?prodNo=${product.prodNo}">${product.prodName}</a></td>
+				<td align="left" data-prod-no="${product.prodNo}">${product.prodName}</td>
 			</c:if>
 			<c:if test = "${param.menu == 'search'}">
-				<td align="left"><a href="/product/getProduct?prodNo=${product.prodNo}">${product.prodName}</a></td>
+				<td align="left" data-prod-no="${product.prodNo}">${product.prodName}</td>
 			</c:if>
 			
 			<td></td>
@@ -186,7 +222,7 @@ ${"listProduct.jsp"}
 			<td align="left">판매중</td>	
 		</tr>
 		<tr>
-		<td colspan="11" bgcolor="D6D7D6" height="1"></td>
+		<td id="${product.prodNo}" colspan="11" bgcolor="D6D7D6" height="1"></td>
 		</tr>
 	</c:forEach>
 </table>
